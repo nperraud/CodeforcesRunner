@@ -4,7 +4,7 @@ The library `lxml` is needed.  Please reference
 
 If you are an Debian/Ubuntu user, simply type:
 
-    $ sudo apt-get install python-lxml
+    $ sudo apt-get install python3-lxml
 
 # Usage
 Using [Codeforces Problem 198A problem

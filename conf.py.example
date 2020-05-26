@@ -12,7 +12,11 @@ ENV = {
     },
     ".py": {
         "compile": "",
-        "execute": "python {0}.py",
+        "execute": "python3 {0}.py",
+    },
+    ".py3": {
+        "compile": "",
+        "execute": "python3 {0}.py",
     },
     ".java": {
         "compile": "javac -cp '.;*' {0}.java",

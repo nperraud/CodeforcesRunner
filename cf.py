@@ -65,8 +65,10 @@ def download_contest(contest_id):
 
 
 def download_problem(contest_id, problem_id):
-    node_to_string = lambda node: node.text + str(b''.join(
-                                  map(etree.tostring, node.getchildren())))
+    node_to_string = lambda node: node.text + ''.join(
+                                  (etree.tostring(n, encoding='unicode',
+                                                  method='text')
+                                     for n in node.getchildren()))
 
     problem_url = '/'.join(
         (CODEFORCES_URL, 'contest', contest_id, 'problem', problem_id))
@@ -76,10 +78,10 @@ def download_problem(contest_id, problem_id):
     title = tree.xpath(
         './/div[contains(@class, "problem-statement")]'
         '/div/div[contains(@class, "title")]')[0].text
-    name = title[3:]
+    problem_name = title[3:].strip()
 
     filename = conf.PATTERN.format(
-        id=problem_id, name=name, contest=contest_id)
+        id=problem_id, name=problem_name, contest=contest_id)
     filename = re.sub(
         r'upper\((.*?)\)', lambda x: x.group(1).upper(), filename)
     filename = re.sub(
@@ -101,7 +103,7 @@ def download_problem(contest_id, problem_id):
             f.write('</answer>\n')
 
     print('contest={0!r}, id={1!r}, problem={2!r} is downloaded.'.format(
-        contest_id, problem_id, name))
+        contest_id, problem_id, problem_name))
 
 
 def is_integer(s):
@@ -146,13 +148,19 @@ def handle_test(executer, case, input_text, answer_text):
     print('output:')
     start = time.time()
     proc = executer.execute()
-    proc.stdin.write(input_text)
+  # os.set_blocking(proc.stdout.fileno(), False)
+    proc.stdin.write(input_text.encode())
+    if not input_text.endswith('\n'):
+        proc.stdin.write('\n'.encode())
+    proc.stdin.flush()
+    proc.stdin.close()
     output_text = ''
-    for output_line in iter(proc.stdout.readline, ''):
-        print(output_line, end=' ')
-        output_text += output_line
+    for output_line in proc.stdout:
+        line = output_line.decode('UTF-8')
+        print(line)
+        output_text += line
     proc.wait()
-    print()
+    output_text = output_text.rstrip('\n')
     end = time.time()
 
     if proc.returncode != 0:
@@ -194,7 +202,7 @@ def main():
         sys.exit(0)
 
     if len(args) < 1 or not os.path.exists(args[0]):
-        print('Source code not exist!')
+        print('Source code does not exist!')
         sys.exit(1)
 
     id, lang = os.path.splitext(args[0])
@@ -210,7 +218,7 @@ def main():
         samples = etree.fromstring(
             '<samples>{0}</samples>'.format(test_file.read()))
         nodes = samples.getchildren()
-        for case in range(len(nodes)/2):
+        for case in range(len(nodes)//2):
             input_text = nodes[case*2].text[1:-1]
             answer_text = nodes[case*2+1].text[1:-1]
             handle_test(executer, case, input_text, answer_text)
