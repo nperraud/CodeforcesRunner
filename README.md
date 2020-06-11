@@ -77,6 +77,13 @@ Or you could added the *contest id* and *problem's name*: (also notice the
 
 the filename would be 'A-about-bacteria.xml'
 
+Set variable EXTRACT_INDIVIDUAL_TEST to True, if you wish store individual test
+cases in separate plain text files (with extension .in).
+
+Similarly, set variable CREATE_DIRECTORY_PER_PROBLEM to True, if you want to
+work with a separate directory for each problem, 
+
+
 # About
 This tool is only verifiid on Linux now, but I think it could be run on
 other platforms, although it maybe need a little modify.

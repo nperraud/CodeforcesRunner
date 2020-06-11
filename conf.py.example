@@ -1,6 +1,8 @@
 PATTERN = "upper({id})"
 REPLACE_SPACE = "_"
 EXTENSION = ".xml"
+EXTRACT_INDIVIDUAL_TEST = True
+CREATE_DIRECTORY_PER_PROBLEM = True
 ENV = {
     ".c": {
         "compile": "gcc -static -fno-optimize-sibling-calls -fno-strict-aliasing -fno-asm -lm -s -O2 -m32 -o {0} {0}.c",
@@ -12,11 +14,7 @@ ENV = {
     },
     ".py": {
         "compile": "",
-        "execute": "python3 {0}.py",
-    },
-    ".py3": {
-        "compile": "",
-        "execute": "python3 {0}.py",
+        "execute": "python {0}.py",
     },
     ".java": {
         "compile": "javac -cp '.;*' {0}.java",

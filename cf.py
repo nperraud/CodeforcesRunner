@@ -80,16 +80,22 @@ def download_problem(contest_id, problem_id):
         '/div/div[contains(@class, "title")]')[0].text
     problem_name = title[3:].strip()
 
-    filename = conf.PATTERN.format(
+    basefname = conf.PATTERN.format(
         id=problem_id, name=problem_name, contest=contest_id)
-    filename = re.sub(
-        r'upper\((.*?)\)', lambda x: x.group(1).upper(), filename)
-    filename = re.sub(
-        r'lower\((.*?)\)', lambda x: x.group(1).lower(), filename)
-    filename = filename.replace(' ', conf.REPLACE_SPACE)
-    filename += conf.EXTENSION
+    basefname = re.sub(
+        r'upper\((.*?)\)', lambda x: x.group(1).upper(), basefname)
+    basefname = re.sub(
+        r'lower\((.*?)\)', lambda x: x.group(1).lower(), basefname)
+    basefname = basefname.replace(' ', conf.REPLACE_SPACE)
+    filename = basefname + conf.EXTENSION
 
-    with open(filename, 'w') as f:
+    dirname = ''
+    if hasattr(conf, 'CREATE_DIRECTORY_PER_PROBLEM') and \
+       conf.CREATE_DIRECTORY_PER_PROBLEM:
+        dirname = problem_id
+        os.makedirs(name=dirname, exist_ok=True)
+
+    with open(os.path.join(dirname, filename), 'w') as f:
         for (input_node, answer_node) in zip(
                 tree.xpath('.//div[contains(@class, "input")]/pre'),
                 tree.xpath('.//div[contains(@class, "output")]/pre')):
@@ -101,6 +107,17 @@ def download_problem(contest_id, problem_id):
             f.write(node_to_string(answer_node).replace('<br/>', '\n'))
             f.write('\n')
             f.write('</answer>\n')
+
+    if hasattr(conf, 'EXTRACT_INDIVIDUAL_TEST') and \
+       conf.EXTRACT_INDIVIDUAL_TEST:
+        test_num = 0
+        for (input_node, answer_node) in zip(
+                tree.xpath('.//div[contains(@class, "input")]/pre'),
+                tree.xpath('.//div[contains(@class, "output")]/pre')):
+            test_num += 1
+            filename = basefname + str(test_num) + '.in'
+            with open(os.path.join(dirname, filename), 'w') as f:
+                 f.write(node_to_string(input_node).replace('<br/>', '\n').lstrip('\n'))
 
     print('contest={0!r}, id={1!r}, problem={2!r} is downloaded.'.format(
         contest_id, problem_id, problem_name))
@@ -201,7 +218,11 @@ def main():
             download_contest(options.contest_id)
         sys.exit(0)
 
-    if len(args) < 1 or not os.path.exists(args[0]):
+    if len(args) < 1:
+        print('Missing command line argument')
+        sys.exit(1)
+
+    if not os.path.exists(args[0]):
         print('Source code does not exist!')
         sys.exit(1)
 
@@ -211,7 +232,7 @@ def main():
     ret = executer.compile()
 
     if ret != 0:
-        print('>>> failed to Compile the source code!')
+        print('>>> Failed to compile the source code!')
         sys.exit(1)
 
     with open('{0}{1}'.format(id, conf.EXTENSION)) as test_file:
