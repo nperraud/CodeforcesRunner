@@ -10,6 +10,8 @@ import time
 import urllib.request, urllib.error, urllib.parse
 
 from lxml import etree
+from markdownify import markdownify as md
+
 
 CODEFORCES_URL = 'http://codeforces.com'
 EPS = 1e-6
@@ -74,7 +76,7 @@ def download_problem(contest_id, problem_id):
         (CODEFORCES_URL, 'contest', contest_id, 'problem', problem_id))
     problem_page = urllib.request.urlopen(problem_url)
     tree = etree.HTML(problem_page.read())
-
+    description = md(etree.tostring(tree.xpath('.//div[contains(@class, "problem-statement")]')[0], pretty_print=True))
     title = tree.xpath(
         './/div[contains(@class, "problem-statement")]'
         '/div/div[contains(@class, "title")]')[0].text
@@ -92,7 +94,7 @@ def download_problem(contest_id, problem_id):
     dirname = ''
     if hasattr(conf, 'CREATE_DIRECTORY_PER_PROBLEM') and \
        conf.CREATE_DIRECTORY_PER_PROBLEM:
-        dirname = problem_id
+        dirname = contest_id+"/"+problem_id
         os.makedirs(name=dirname, exist_ok=True)
 
     with open(os.path.join(dirname, filename), 'w') as f:
@@ -118,6 +120,13 @@ def download_problem(contest_id, problem_id):
             filename = basefname + str(test_num) + '.in'
             with open(os.path.join(dirname, filename), 'w') as f:
                  f.write(node_to_string(input_node).replace('<br/>', '\n').lstrip('\n'))
+
+    if hasattr(conf, 'EXTRACT_DESCRIPTION') and \
+       conf.EXTRACT_DESCRIPTION:
+        
+            filename = basefname + 'description.md'
+            with open(os.path.join(dirname, filename), 'w') as f:
+                 f.write(description.replace('<br/>', '\n').lstrip('\n'))
 
     print('contest={0!r}, id={1!r}, problem={2!r} is downloaded.'.format(
         contest_id, problem_id, problem_name))
